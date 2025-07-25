@@ -7,6 +7,7 @@ namespace Framework;
 class Router
 {
     private array $routes = [];
+    private array $middleswares = [];
 
     public function add(string $method, string $path, array $controller)
     {
@@ -26,7 +27,7 @@ class Router
         return $path;
     }
 
-    public function dispatch(string $path, string $method)
+    public function dispatch(string $path, string $method, ?Container $container = null)
     {
         //normalizujemy przekazane parametry
         $path = $this->normalizePath($path);
@@ -41,12 +42,26 @@ class Router
                 continue;
             }
 
-            //Jeśli znajdzie to odczytujemy z niej klase i funkcje
             [$class, $function] = $route['controller'];
-            //Tworzymy obiekt odczytanej klasy
-            $controllerInstatnce = new $class;
-            //I uruchamiamy na tym obiekcie odczytaną funkcje
-            $controllerInstatnce->{$function}();
+            $controllerInstatnce = $container ?
+                $container->resolve($class) :
+                new $class;
+            $action = fn() => $controllerInstatnce->{$function}();
+
+            foreach ($this->middleswares as $middleware) {
+                $middlewareInstatce = $container ?
+                    $container->resolve($middleware) :
+                    new $middleware;
+                $action = fn() => $middlewareInstatce->process($action);
+            }
+
+            $action();
+
+            return;
         }
+    }
+    public function addMiddleware(string $middleware)
+    {
+        $this->middleswares[] = $middleware;
     }
 }

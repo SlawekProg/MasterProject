@@ -8,11 +8,19 @@ class App
 {
     //Tworzymy zmienną router klasy Router
     private Router $router;
+    //Tworzymy zmienną container klasy Cotainer
+    private Container $container;
 
     //W konstruktorze klasy dla zmiennej router przypisujemy obiekt klasy Router
-    public function __construct()
+    public function __construct(?string $containerDefinitionsPath = null)
     {
         $this->router = new Router();
+        $this->container = new Container();
+
+        if ($containerDefinitionsPath) {
+            $containerDefinition = include $containerDefinitionsPath;
+            $this->container->addDefinition($containerDefinition);
+        }
     }
 
     public function run()
@@ -22,7 +30,7 @@ class App
         //Odczytujemy z adresu metode HTTP (GET lub POST lub ....)
         $method = $_SERVER['REQUEST_METHOD'];
         //Dla tego obiektu uruchamiamy metode dispatch klasy router przekazując odczytane parametry
-        $this->router->dispatch($path, $method);
+        $this->router->dispatch($path, $method, $this->container);
     }
 
     public function get(string $path, array $controller)
@@ -30,5 +38,15 @@ class App
         // Do otrzymanych parametrów dodajemy metode HTTP i
         //uruchamiamy w obiekcie router klasy Router metode dodawania trasy do listy routingu
         $this->router->add('GET', $path, $controller);
+    }
+
+    public function post(string $path, array $controller)
+    {
+        $this->router->add('POST', $path, $controller);
+    }
+
+    public function addMiddleware(string $middleware)
+    {
+        $this->router->addMiddleware($middleware);
     }
 }

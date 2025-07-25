@@ -1,4 +1,5 @@
 <?php
+
 include __DIR__ . '/../src/App/functions.php';
 
 //Uruchamiamy bootsrap.php i przypisujemy to co zwróc do $app (obiekt klasy App w tym przypadku)
