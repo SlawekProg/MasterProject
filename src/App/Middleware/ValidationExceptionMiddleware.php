@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Middleware;
 
 use Framework\Contracts\MiddlewareInterface;
-use Framework\Exceptions\ValidationExeption;
+use Framework\Exceptions\ValidationException;
 
 class ValidationExceptionMiddleware implements MiddlewareInterface
 {
@@ -13,7 +13,7 @@ class ValidationExceptionMiddleware implements MiddlewareInterface
     {
         try {
             $next();
-        } catch (ValidationExeption $e) {
+        } catch (ValidationException $e) {
             $oldFormData = $_POST;
 
             $excludedFields = ['password', 'confirmPassword'];

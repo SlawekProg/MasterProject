@@ -33,20 +33,29 @@ class App
         $this->router->dispatch($path, $method, $this->container);
     }
 
-    public function get(string $path, array $controller)
+    public function get(string $path, array $controller): App
     {
         // Do otrzymanych parametrów dodajemy metode HTTP i
         //uruchamiamy w obiekcie router klasy Router metode dodawania trasy do listy routingu
         $this->router->add('GET', $path, $controller);
+
+        return $this;
     }
 
-    public function post(string $path, array $controller)
+    public function post(string $path, array $controller): App
     {
         $this->router->add('POST', $path, $controller);
+
+        return $this;
     }
 
     public function addMiddleware(string $middleware)
     {
         $this->router->addMiddleware($middleware);
+    }
+
+    public function add(string $middleware)
+    {
+        $this->router->addRouteMiddleware($middleware);
     }
 }
