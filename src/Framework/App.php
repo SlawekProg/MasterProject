@@ -58,4 +58,16 @@ class App
     {
         $this->router->addRouteMiddleware($middleware);
     }
+
+    public function delete(string $path, array $controller): App
+    {
+        $this->router->add('DELETE', $path, $controller);
+
+        return $this;
+    }
+
+    public function setErrorHandler(array $controller)
+    {
+        $this->router->setErrorHandler($controller);
+    }
 }

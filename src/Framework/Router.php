@@ -7,16 +7,19 @@ namespace Framework;
 class Router
 {
     private array $routes = [];
-    private array $middleswares = [];
+    private array $middlewares = [];
+    private array $errorHandler;
 
     public function add(string $method, string $path, array $controller)
     {
         $path = $this->normalizePath($path);
+        $regexPath = preg_replace('#{[^/]+}#', '([^/]+)', $path);
         $this->routes[] = [
             'path' => $path,
             'method' => strtoupper($method),
             'controller' => $controller,
-            'middleware' => []
+            'middlewares' => [],
+            'regexPath' => $regexPath
         ];
     }
 
@@ -32,24 +35,32 @@ class Router
     {
         //normalizujemy przekazane parametry
         $path = $this->normalizePath($path);
-        $method = strtoupper($method);
+        $method = strtoupper($_POST['_METHOD'] ?? $method);
         //przeszukujemy trasy w poszukiwaniu tej przekazanej w parametrach
         foreach ($this->routes as $route) {
             if (
-                !preg_match("#^{$route['path']}$#", $path) ||
+                !preg_match("#^{$route['regexPath']}$#", $path, $paramValues) ||
                 $route['method'] !== $method
             ) {
                 //jeśli nie znajdzie w obecnej to przechodzi do następnej trasy
                 continue;
             }
 
+            array_shift($paramValues);
+
+            preg_match_all('#{([^/]+)}#', $route['path'], $paramKeys);
+
+            $paramKeys = $paramKeys[1];
+
+            $params = array_combine($paramKeys, $paramValues);
+
             [$class, $function] = $route['controller'];
             $controllerInstatnce = $container ?
                 $container->resolve($class) :
                 new $class;
-            $action = fn() => $controllerInstatnce->{$function}();
+            $action = fn() => $controllerInstatnce->{$function}($params);
 
-            $allMiddleware = [...$route['middlewares'], ...$this->middleswares];
+            $allMiddleware = [...$route['middlewares'], ...$this->middlewares];
 
             foreach ($allMiddleware as $middleware) {
                 $middlewareInstatce = $container ?
@@ -62,16 +73,40 @@ class Router
 
             return;
         }
+
+        $this->dispatchNotFound($container);
     }
 
     public function addMiddleware(string $middleware)
     {
-        $this->middleswares[] = $middleware;
+        $this->middlewares[] = $middleware;
     }
 
     public function addRouteMiddleware(string $middleware)
     {
         $lastRouteKey = array_key_last($this->routes);
         $this->routes[$lastRouteKey]['middlewares'][] = $middleware;
+    }
+
+
+    public function setErrorHandler(array $controller)
+    {
+        $this->errorHandler = $controller;
+    }
+
+    public function dispatchNotFound(?Container $container)
+    {
+        [$class, $function] = $this->errorHandler;
+
+        $controllerInstatnce = $container ? $container->resolve($class) : new $class;
+
+        $action = fn() => $controllerInstatnce->$function();
+
+        foreach ($this->middlewares as $middleware) {
+            $middlewareInstatnce = $container ? $container->resolve($middleware) : new $middleware;
+            $action = fn() => $middlewareInstatnce->process($action);
+        }
+
+        $action();
     }
 }
