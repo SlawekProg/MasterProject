@@ -6,12 +6,9 @@ namespace Framework;
 
 class App
 {
-    //Tworzymy zmienną router klasy Router
     private Router $router;
-    //Tworzymy zmienną container klasy Cotainer
     private Container $container;
 
-    //W konstruktorze klasy dla zmiennej router przypisujemy obiekt klasy Router
     public function __construct(?string $containerDefinitionsPath = null)
     {
         $this->router = new Router();

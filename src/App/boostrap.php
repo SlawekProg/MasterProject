@@ -18,6 +18,7 @@ $app = new App(Paths::SOURCE . "app/container-definition.php");
 
 //Rejestrujemy liste routingową
 registerRoutes($app);
+
 //Rejestrujemy liste middleware
 registerMiddleware($app);
 
